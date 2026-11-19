@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Character.hpp"
+#include "../Character/Character.hpp"
 
 struct Scene {
     const char* title;

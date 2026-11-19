@@ -1,10 +1,10 @@
-#include "Game.hpp"
-#include "Console.hpp"
-#include "Dialogue.hpp"
-#include "Story.hpp"
+#include "../Game/Game.hpp"
+#include "../Console.hpp"
+#include "../Dialogue/Dialogue.hpp"
+#include "../Story/Story.hpp"
 
 #include <array>
-#include <iomanip>
+//#include <iomanip>
 #include <string>
 #include <vector>
 

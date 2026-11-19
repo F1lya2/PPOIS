@@ -1,5 +1,5 @@
 #include "Dialogue.hpp"
-#include "Console.hpp"
+#include "../Console.hpp"
 
 int Dialogue::run(const std::vector<DialogueNode>& nodes, const Character& hero) {
     if (nodes.empty()) {

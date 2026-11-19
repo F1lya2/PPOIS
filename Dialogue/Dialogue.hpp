@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Character.hpp"
+#include "../Character/Character.hpp"
 
 #include <string>
 #include <vector>
