@@ -1,6 +1,6 @@
 #pragma once
 
-#include "States.hpp"
+#include "../States/States.hpp"
 
 #include <array>
 #include <cstddef>
