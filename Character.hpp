@@ -1,56 +1,70 @@
 #pragma once
 
+#include "States.hpp"
+
+#include <array>
 #include <cstddef>
-#include <string>
 #include <vector>
 
-enum class Stat { Strength, Intellect, Charisma };
-enum class ItemType { Remedy, Relic };
+enum class HeroId { WanderingAngel, Seer };
+enum class Stat { Strength, Constitution, Dexterity, Intellect, Wisdom, Charisma, Count };
+enum class ItemId { None, SerpentFang, HerbPouch, WhistlingDeath };
 
-class Item {
-public:
-    Item(std::string name, ItemType type, int healing, bool cursed);
+using Modifiers = std::array<int, static_cast<std::size_t>(Stat::Count)>;
 
-    const std::string& name() const;
-    ItemType type() const;
-    int healing() const;
-    bool cursed() const;
-
-private:
-    std::string name_;
-    ItemType type_;
-    int healing_;
-    bool cursed_;
+struct Item {
+    ItemId id;
+    const char* name;
+    const char* description;
+    bool isWeapon;
+    int attackBonus = 0;
+    int damageBonus = 0;
 };
+
+struct HeroProfile {
+    const char* name;
+    const char* description;
+    const char* background;
+    Modifiers modifiers;
+    ItemId startingItem;
+};
+
+const HeroProfile& profile(HeroId id);
+const Item& item(ItemId id);
+const char* statName(Stat stat);
 
 class Character {
 public:
-    static constexpr int MaxHp = 32;
-    static constexpr int MaxMadness = 100;
+    explicit Character(HeroId id);
 
-    int hp() const;
-    int madness() const;
+    HeroId id() const;
     int stat(Stat stat) const;
-    void improve(Stat stat);
+    int hp() const;
+    int maxHp() const;
     void takeDamage(int damage);
-    void addMadness(int amount);
 
-    const std::vector<Item>& inventory() const;
-    bool hasItem(ItemType type) const;
-    void addItem(const Item& item);
-    bool useItem(std::size_t index);
-    bool discardItem(std::size_t index);
+    States& states();
+    const States& states() const;
+
+    const std::vector<ItemId>& inventory() const;
+    bool hasItem(ItemId id) const;
+    bool addItem(ItemId id);
+    bool equip(ItemId id);
+    bool discard(ItemId id);
+    const Item& weapon() const;
+    bool whistleUsed() const;
+    bool spendWhistle();
+    void dawn();
 
 private:
-
     friend class SaveFile;
 
-    int hp_ = MaxHp;
-    int strength_ = 5;
-    int intellect_ = 4;
-    int charisma_ = 3;
-    int madness_ = 0;
-    std::vector<Item> inventory_;
+    HeroId id_;
+    int hp_;
+    States states_;
+    std::vector<ItemId> inventory_;
+    ItemId equipped_ = ItemId::None;
+    bool whistleUsed_ = false;
 };
 
-bool check(int stat, int difficulty);
+bool check(int value, int difficulty);

@@ -1,75 +1,84 @@
 #include "Character.hpp"
 
 #include <algorithm>
-#include <utility>
 
-Item::Item(std::string name, ItemType type, int healing, bool cursed)
-    : name_(std::move(name)), type_(type), healing_(healing), cursed_(cursed) {}
+const char* statName(Stat stat) {
+    static constexpr std::array<const char*, 6> Names{
+        "Сила", "Телосложение", "Ловкость", "Интеллект", "Мудрость", "Харизма"
+    };
+    return Names.at(static_cast<std::size_t>(stat));
+}
 
-const std::string& Item::name() const { return name_; }
-ItemType Item::type() const { return type_; }
-int Item::healing() const { return healing_; }
-bool Item::cursed() const { return cursed_; }
+Character::Character(HeroId id) : id_(id), hp_(maxHp()) {
+    const ItemId startingItem = profile(id_).startingItem;
+    addItem(startingItem);
+    equip(startingItem);
+}
 
-int Character::hp() const { return hp_; }
-int Character::madness() const { return madness_; }
+HeroId Character::id() const { return id_; }
 
 int Character::stat(Stat stat) const {
-    switch (stat) {
-        case Stat::Strength: return strength_;
-        case Stat::Intellect: return intellect_;
-        case Stat::Charisma: return charisma_;
-    }
-    return 0;
+    return profile(id_).modifiers.at(static_cast<std::size_t>(stat));
 }
 
-void Character::improve(Stat stat) {
-    switch (stat) {
-        case Stat::Strength: ++strength_; break;
-        case Stat::Intellect: ++intellect_; break;
-        case Stat::Charisma: ++charisma_; break;
-    }
-}
+int Character::hp() const { return hp_; }
+int Character::maxHp() const { return 10 + stat(Stat::Constitution); }
 
 void Character::takeDamage(int damage) {
-    hp_ = std::max(0, hp_ - damage);
+    hp_ -= std::clamp(damage, 0, hp_);
 }
 
-void Character::addMadness(int amount) {
-    madness_ = std::clamp(madness_ + amount, 0, MaxMadness);
+States& Character::states() { return states_; }
+const States& Character::states() const { return states_; }
+
+const std::vector<ItemId>& Character::inventory() const { return inventory_; }
+
+bool Character::hasItem(ItemId id) const {
+    return std::find(inventory_.begin(), inventory_.end(), id) != inventory_.end();
 }
 
-const std::vector<Item>& Character::inventory() const {
-    return inventory_;
-}
-
-bool Character::hasItem(ItemType type) const {
-    return std::any_of(inventory_.begin(), inventory_.end(),
-                       [type](const Item& item) { return item.type() == type; });
-}
-
-void Character::addItem(const Item& item) {
-    if (!hasItem(item.type())) {
-        inventory_.push_back(item);
-    }
-}
-
-bool Character::useItem(std::size_t index) {
-    if (index >= inventory_.size()) {
+bool Character::addItem(ItemId id) {
+    if (id == ItemId::None || hasItem(id)) {
         return false;
     }
-    hp_ = std::min(MaxHp, hp_ + inventory_[index].healing());
-    return discardItem(index);
-}
-
-bool Character::discardItem(std::size_t index) {
-    if (index >= inventory_.size()) {
-        return false;
-    }
-    inventory_.erase(inventory_.begin() + index);
+    inventory_.push_back(id);
     return true;
 }
 
-bool check(int stat, int difficulty) {
-    return stat >= difficulty;
+bool Character::equip(ItemId id) {
+    if (!hasItem(id) || !item(id).isWeapon) {
+        return false;
+    }
+    equipped_ = id;
+    return true;
 }
+
+bool Character::discard(ItemId id) {
+    const auto position = std::find(inventory_.begin(), inventory_.end(), id);
+    if (position == inventory_.end()) {
+        return false;
+    }
+    inventory_.erase(position);
+    if (equipped_ == id) {
+        equipped_ = ItemId::None;
+    }
+    return true;
+}
+
+const Item& Character::weapon() const { return item(equipped_); }
+bool Character::whistleUsed() const { return whistleUsed_; }
+
+bool Character::spendWhistle() {
+    if (whistleUsed_ || equipped_ != ItemId::WhistlingDeath) {
+        return false;
+    }
+    whistleUsed_ = true;
+    return true;
+}
+
+void Character::dawn() {
+    whistleUsed_ = false;
+    states_.dawn();
+}
+
+bool check(int value, int difficulty) { return value >= difficulty; }
